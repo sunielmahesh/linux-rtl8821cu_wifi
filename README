@@ -1,0 +1,76 @@
+This repo is based on brektou rtl8821CU at:
+https://github.com/brektrou/rtl8821CU
+
+These wireless drivers are recommended to build at host than the target.
+
+Tested on Linux-5.10 kernel, roc-rk3399-pc ARM64 based target.
+
+1. export cross-compiler
+
+2. build linux, assume /path/to/linux
+   # wireless core
+   CONFIG_WIRELESS=y
+   CONFIG_CFG80211=y
+   CONFIG_MAC80211=y
+   CONFIG_CFG80211_WEXT=y
+
+   # wireless drivers
+   CONFIG_WLAN=y
+
+3. For AArch64, remove "-mgeneral-regs-only" flag for the rtl8821cu driver to compile
+   The kernel here is the one built/used for the target (in this case roc-rk3399-pc)
+   $ sudo cp /lib/modules/$(uname -r)/build/arch/arm64/Makefile /lib/modules/$(uname -r)/build/arch/arm64/Makefile.$(date +%Y%m%d%H%M)
+   $ sudo sed -i 's/-mgeneral-regs-only//' /lib/modules/$(uname -r)/build/arch/arm64/Makefile
+
+4. build rtl8821cu
+
+   $ make CROSS_COMPILE=aarch64-buildroot-linux-gnu- ARCH=arm64 -C "/path/to/linux" M="/path/to/rtl8821cu" CONFIG_RTL8821CU=m 
+   $ make CROSS_COMPILE=aarch64-buildroot-linux-gnu- ARCH=arm64 -C "/path/to/linux" M="/path/to/rtl8821cu" INSTALL_MOD_PATH="/path/to/modules" modules_install
+
+5. copy bluetooth firmware from rtl8821cs to "/path/to/modules" lib/ folder.
+
+6. boot the device, insert usb wifi 
+
+    find your usb-wifi-adapter device ID, like "0bda:1a2b", by type:
+    lsusb
+
+    USB wifi is identified as storage device, change the functionality by usb_modeswitch
+
+    # usb_modeswitch -KW -v 0bda -p 1a2b
+
+7. both wifi and Bt are up and running as below:
+ 
+# hciconfig -a
+hci0:   Type: Primary  Bus: USB
+        BD Address: 00:E0:4C:23:99:87  ACL MTU: 1021:8  SCO MTU: 255:12
+        DOWN 
+        RX bytes:1557 acl:0 sco:0 events:166 errors:0
+        TX bytes:32898 acl:0 sco:0 commands:166 errors:0
+        Features: 0xff 0xff 0xff 0xfe 0xdb 0xfd 0x7b 0x87
+        Packet type: DM1 DM3 DM5 DH1 DH3 DH5 HV1 HV2 HV3 
+        Link policy: RSWITCH HOLD SNIFF PARK 
+        Link mode: SLAVE ACCEPT 
+
+# ifconfig -a
+eth0      Link encap:Ethernet  HWaddr A6:43:E2:95:99:AF  
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+          Interrupt:35 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+wlan0     Link encap:Ethernet  HWaddr 1C:BF:CE:29:14:97  
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
