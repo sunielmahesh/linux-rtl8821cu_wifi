@@ -1,13 +1,11 @@
 This repo is based on brektou rtl8821CU at:
 https://github.com/brektrou/rtl8821CU
 
-These wireless drivers are recommended to build at host than the target.
-
 Tested on Linux-5.10 kernel, roc-rk3399-pc ARM64 based target.
 
 1. export cross-compiler
 
-2. build linux, assume /path/to/linux
+2. build linux with the below configs enabled
    # wireless core
    CONFIG_WIRELESS=y
    CONFIG_CFG80211=y
@@ -19,7 +17,9 @@ Tested on Linux-5.10 kernel, roc-rk3399-pc ARM64 based target.
 
 3. For AArch64, remove "-mgeneral-regs-only" flag for the rtl8821cu driver to compile
    The kernel here is the one built/used for the target (in this case roc-rk3399-pc)
+   a. backup Makefile
    $ sudo cp /lib/modules/$(uname -r)/build/arch/arm64/Makefile /lib/modules/$(uname -r)/build/arch/arm64/Makefile.$(date +%Y%m%d%H%M)
+   b. do the required change as stated above.
    $ sudo sed -i 's/-mgeneral-regs-only//' /lib/modules/$(uname -r)/build/arch/arm64/Makefile
 
 4. build rtl8821cu
@@ -28,6 +28,8 @@ Tested on Linux-5.10 kernel, roc-rk3399-pc ARM64 based target.
    $ make CROSS_COMPILE=aarch64-buildroot-linux-gnu- ARCH=arm64 -C "/path/to/linux" M="/path/to/rtl8821cu" INSTALL_MOD_PATH="/path/to/modules" modules_install
 
 5. copy bluetooth firmware from rtl8821cs to "/path/to/modules" lib/ folder.
+   the path should be as follows:
+   /lib/firmware/rtl_bt
 
 6. boot the device, insert usb wifi 
 
